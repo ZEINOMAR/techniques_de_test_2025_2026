@@ -1,13 +1,30 @@
 import time
 import pytest
-from src.triangulator import core
+from src.triangulator import core, binary
+
 
 @pytest.mark.perf
-def test_triangulation_perf_smoke():
-    pts = [(float(i), float(i+1)) for i in range(1000)]
-    t0 = time.perf_counter()
+def test_triangulation_perf_small():
+    points = [(float(i), float(i + 1)) for i in range(200)]
+
+    start = time.perf_counter()
     try:
-        core.triangulate(pts)
+        core.triangulate(points)
     except Exception:
         pass
-    assert (time.perf_counter() - t0) < 1.0
+    duration = time.perf_counter() - start
+
+    assert duration < 0.5
+
+
+@pytest.mark.perf
+def test_encode_decode_point_set_perf():
+    points = [(float(i), float(i * 0.5)) for i in range(5000)]
+
+    start = time.perf_counter()
+    data = binary.encode_point_set(points)
+    decoded = binary.decode_point_set(data)
+    duration = time.perf_counter() - start
+
+    assert duration < 1.0
+    assert decoded == points
