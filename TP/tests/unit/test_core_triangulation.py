@@ -1,5 +1,5 @@
 import pytest
-from src.triangulator import core
+from triangulator import core
 
 
 def test_triangulation_three_points_returns_one_triangle():

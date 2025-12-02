@@ -1,7 +1,7 @@
 import pytest
 from flask import Response
-from src.triangulator.api import app
-from src.triangulator import client_psm
+from triangulator.api import app
+from triangulator import client_psm
 
 
 @pytest.fixture
@@ -13,7 +13,7 @@ def test_get_triangulation_success(monkeypatch, client):
     def mock_get_pointset_bytes(pointset_id):
         return b"\x03\x00\x00\x00" + b"\x00\x00\x00\x00" * 6
 
-    monkeypatch.setattr("src.triangulator.client_psm.get_pointset_bytes", mock_get_pointset_bytes)
+    monkeypatch.setattr("triangulator.client_psm.get_pointset_bytes", mock_get_pointset_bytes)
     res = client.get("/triangulation/123e4567-e89b-12d3-a456-426614174000")
 
     assert res.status_code == 200
@@ -45,7 +45,7 @@ def test_get_triangulation_not_found(monkeypatch, client):
     def mock_get_pointset_bytes(pointset_id):
         raise client_psm.PointSetNotFound("PointSet not found")
 
-    monkeypatch.setattr("src.triangulator.client_psm.get_pointset_bytes", mock_get_pointset_bytes)
+    monkeypatch.setattr("triangulator.client_psm.get_pointset_bytes", mock_get_pointset_bytes)
     res = client.get("/triangulation/11111111-1111-1111-1111-111111111111")
 
     assert res.status_code == 404
@@ -56,7 +56,7 @@ def test_get_triangulation_service_unavailable(monkeypatch, client):
     def mock_get_pointset_bytes(pointset_id):
         raise client_psm.PointSetManagerUnavailable("PSM down")
 
-    monkeypatch.setattr("src.triangulator.client_psm.get_pointset_bytes", mock_get_pointset_bytes)
+    monkeypatch.setattr("triangulator.client_psm.get_pointset_bytes", mock_get_pointset_bytes)
     res = client.get("/triangulation/22222222-2222-2222-2222-222222222222")
 
     assert res.status_code == 503
@@ -67,7 +67,7 @@ def test_get_triangulation_internal_error(monkeypatch, client):
     def mock_get_pointset_bytes(pointset_id):
         raise Exception("Unexpected error")
 
-    monkeypatch.setattr("src.triangulator.client_psm.get_pointset_bytes", mock_get_pointset_bytes)
+    monkeypatch.setattr("triangulator.client_psm.get_pointset_bytes", mock_get_pointset_bytes)
     res = client.get("/triangulation/33333333-3333-3333-3333-333333333333")
 
     assert res.status_code == 500

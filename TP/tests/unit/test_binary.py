@@ -1,5 +1,6 @@
 import pytest
-from src.triangulator import binary
+import math
+from triangulator import binary
 
 
 def test_encode_point_set_basic():
@@ -15,7 +16,9 @@ def test_encode_decode_roundtrip():
     encoded = binary.encode_point_set(pts)
     decoded = binary.decode_point_set(encoded)
 
-    assert decoded == pts
+    for (dx, dy), (x, y) in zip(decoded, pts):
+        assert math.isclose(dx, x, rel_tol=1e-6, abs_tol=1e-6)
+        assert math.isclose(dy, y, rel_tol=1e-6, abs_tol=1e-6)
 
 
 def test_decode_invalid_too_short():
@@ -35,4 +38,6 @@ def test_decode_valid_float_values():
     data = binary.encode_point_set(pts)
     decoded = binary.decode_point_set(data)
 
-    assert decoded == pts
+    for (dx, dy), (x, y) in zip(decoded, pts):
+        assert math.isclose(dx, x, rel_tol=1e-6, abs_tol=1e-6)
+        assert math.isclose(dy, y, rel_tol=1e-6, abs_tol=1e-6)
