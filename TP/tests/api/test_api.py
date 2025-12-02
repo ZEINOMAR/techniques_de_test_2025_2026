@@ -1,4 +1,3 @@
-
 import pytest
 from flask import Response
 from src.triangulator.api import app
@@ -25,7 +24,21 @@ def test_get_triangulation_success(monkeypatch, client):
 
 def test_get_triangulation_invalid_id(client):
     res = client.get("/triangulation/invalid-id-format")
-    assert res.status_code in [200, 400]
+    assert res.status_code == 400
+    assert res.is_json
+    assert res.json.get("code") == "INVALID_ID_FORMAT"
+
+
+def test_get_triangulation_empty_id_path(client):
+    res = client.get("/triangulation/")
+    assert res.status_code in (400, 404)
+
+
+def test_get_triangulation_bad_uuid_extra_chars(client):
+    res = client.get("/triangulation/123e4567-e89b-12d3-a456-426614174000-XYZ")
+    assert res.status_code == 400
+    assert res.is_json
+    assert res.json.get("code") == "INVALID_ID_FORMAT"
 
 
 def test_get_triangulation_not_found(monkeypatch, client):
