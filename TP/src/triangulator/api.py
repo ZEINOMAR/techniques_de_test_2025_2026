@@ -35,11 +35,17 @@ def get_triangulation(pointset_id: str) -> Response:
         points = binary.decode_point_set(data)
 
         # --------- 4) Triangulate ----------
-        _tris = core.triangulate(points)
+        # Compute the triangulation (list of (i, j, k) indices) from the decoded points
+        triangles = core.triangulate(points)
 
-        # tests only check status + mimetype, not content
-        dummy = b"\x00\x00\x00\x00"
-        return Response(dummy, mimetype="application/octet-stream", status=200)
+        # --------- 5) Encode Triangles in the binary format expected by the client
+        triangles_bytes = binary.encode_triangles(points, triangles)
+
+        return Response(
+            triangles_bytes,
+            mimetype="application/octet-stream",
+            status=200,
+        )
 
     except client_psm.PointSetNotFound:
         return jsonify({"code": "NOT_FOUND", "message": "PointSet not found"}), 404
