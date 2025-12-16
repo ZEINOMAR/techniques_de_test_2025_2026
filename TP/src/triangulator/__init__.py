@@ -1,1 +1,1 @@
-"""Package Triangulator - TP Techniques de Test 2025/2026"""
+"""Package Triangulator - TP Techniques de Test 2025/2026."""

@@ -1,45 +1,51 @@
-"""Binary encoder/decoder for PointSet and Triangles data."""
+"""Encodeur et décodeur binaire pour les structures PointSet et Triangles."""
 
 import struct
 
 
-# ------------------------------------------------------------
-#  POINT SET (vertices)
-# ------------------------------------------------------------
-
 def encode_point_set(points):
-    """
-    Encode a list of (x, y) points into the PointSet binary format.
+    """Encode une liste de points 2D dans le format binaire PointSet.
 
-    Format:
-        - 4 bytes: unsigned int (N, number of points)
-        - N * 8 bytes: each point as (float32, float32)
-    """
+    Format :
+    - 4 octets : nombre de points (entier non signé)
+    - N × 8 octets : coordonnées (x, y) de chaque point en flottants
 
-    data = struct.pack("<I", len(points))  # number of points
+    Args:
+        points (list[tuple[float, float]]): Liste des points (x, y).
+
+    Returns:
+        bytes: Données binaires représentant le PointSet.
+
+    """
+    data = struct.pack("<I", len(points))
 
     for x, y in points:
-        data += struct.pack("<ff", float(x), float(y))  # 2x float32 = 8 bytes
+        data += struct.pack("<ff", float(x), float(y))
 
     return data
 
 
 def decode_point_set(data):
-    """
-    Decode PointSet binary format into list of (x, y).
+    """Décode des données binaires PointSet en une liste de points 2D.
+
+    Args:
+        data (bytes): Données binaires au format PointSet.
+
+    Returns:
+        list[tuple[float, float]]: Liste des points décodés.
 
     Raises:
-        ValueError if buffer too short or invalid length.
-    """
+        ValueError: Si le buffer est trop court ou incohérent.
 
+    """
     if len(data) < 4:
-        raise ValueError("Buffer too short for PointSet header")
+        raise ValueError("Buffer trop court pour un PointSet")
 
     (n_points,) = struct.unpack("<I", data[:4])
-    expected_length = 4 + n_points * 8  # each point = 8 bytes
+    expected_length = 4 + n_points * 8
 
     if len(data) != expected_length:
-        raise ValueError("Invalid PointSet binary length")
+        raise ValueError("Longueur binaire invalide pour un PointSet")
 
     points = []
     offset = 4
@@ -52,26 +58,25 @@ def decode_point_set(data):
     return points
 
 
-# ------------------------------------------------------------
-#  TRIANGLES (vertices + triangle indices)
-# ------------------------------------------------------------
-
 def encode_triangles(vertices, triangles):
-    """
-    Encode triangulation result:
-    Part 1: vertices in PointSet format (float32)
-    Part 2:
-        - 4 bytes: unsigned int T (#triangles)
-        - T * 12 bytes: each triangle (i, j, k) as 3x uint32
-    """
+    """Encode les sommets et les triangles d'une triangulation en binaire.
 
-    # Encode vertices using existing function
+    Format :
+    - PointSet des sommets
+    - 4 octets : nombre de triangles
+    - T × 12 octets : indices (i, j, k) des sommets
+
+    Args:
+        vertices (list[tuple[float, float]]): Sommets 2D.
+        triangles (list[tuple[int, int, int]]): Indices des triangles.
+
+    Returns:
+        bytes: Données binaires de la triangulation.
+
+    """
     data = encode_point_set(vertices)
-
-    # Append number of triangles
     data += struct.pack("<I", len(triangles))
 
-    # Append each triangle indices
     for i, j, k in triangles:
         data += struct.pack("<III", int(i), int(j), int(k))
 
@@ -79,30 +84,46 @@ def encode_triangles(vertices, triangles):
 
 
 def decode_triangles(data):
-    """
-    Decode binary triangulation buffer into:
-        vertices: list[(float, float)]
-        triangles: list[(int, int, int)]
-    """
+    """Décode des données binaires de triangulation.
 
-    # Decode vertices first
-    vertices = decode_point_set(data)
-    offset = 4 + len(vertices) * 8  # header + vertices
+    Args:
+        data (bytes): Données binaires contenant sommets et triangles.
+
+    Returns:
+        tuple:
+            - vertices (list[tuple[float, float]])
+            - triangles (list[tuple[int, int, int]])
+
+    Raises:
+        ValueError: Si le buffer est invalide ou incomplet.
+
+    """
+    if len(data) < 4:
+        raise ValueError("Buffer trop court pour une triangulation")
+
+    (n_points,) = struct.unpack("<I", data[:4])
+    pointset_size = 4 + n_points * 8
+
+    if len(data) < pointset_size:
+        raise ValueError("Données insuffisantes pour les sommets")
+
+    vertices = decode_point_set(data[:pointset_size])
+    offset = pointset_size
 
     if len(data) < offset + 4:
-        raise ValueError("Buffer too short for triangles header")
+        raise ValueError("Données insuffisantes pour l'en-tête des triangles")
 
-    (n_tris,) = struct.unpack("<I", data[offset:offset + 4])
+    (n_triangles,) = struct.unpack("<I", data[offset:offset + 4])
     offset += 4
 
-    expected_length = offset + n_tris * 12  # each triangle = 12 bytes
+    expected_length = offset + n_triangles * 12
 
     if len(data) != expected_length:
-        raise ValueError("Invalid length for triangles section")
+        raise ValueError("Longueur invalide pour les triangles")
 
     triangles = []
 
-    for _ in range(n_tris):
+    for _ in range(n_triangles):
         i, j, k = struct.unpack("<III", data[offset:offset + 12])
         triangles.append((i, j, k))
         offset += 12
