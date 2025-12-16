@@ -54,3 +54,4 @@ clean:
 
 clean_venv:
 	@rm -rf $(VENV)
+all: install lint test coverage doc
